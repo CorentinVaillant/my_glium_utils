@@ -8,3 +8,4 @@
 pub mod canvas;
 pub mod mesh;
 pub mod maths;
+pub mod datastruct;
