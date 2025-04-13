@@ -1,4 +1,4 @@
-# My glium util
+# My glium utils
 
 This library contains all my utilities for projects using the Glium crate.
 Feel free to use it, and don’t hesitate to report any bugs you find,
