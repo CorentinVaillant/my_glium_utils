@@ -9,7 +9,7 @@ use glium::{
 };
 use traits::{CanvasDrawable, Drawable};
 
-use crate::geometry::vertex::*;
+use crate::mesh::vertex::*;
 
 pub struct Canvas {
     pub data: CanvasData,

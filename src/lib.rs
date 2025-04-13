@@ -6,4 +6,5 @@
 //! alongside my studies, which already take up a lot of my time.
 
 pub mod canvas;
-pub mod geometry;
+pub mod mesh;
+pub mod maths;
