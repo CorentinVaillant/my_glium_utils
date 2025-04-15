@@ -1,119 +1,10 @@
+use super::{
+    aabb::{Aabb, DiagonalDirection},
+    points::{As2dPoint, IndexPoint},
+};
+
 #[cfg(test)]
 mod test;
-
-
-#[derive(Debug, Clone, Copy)]
-pub struct Point {
-    pub x: f32,
-    pub y: f32,
-}
-
-impl Point {
-    ///false if either x or y are NaN or Infinite
-    fn is_valid(&self) -> bool {
-        !(self.x.is_nan() || self.y.is_nan() || self.x.is_infinite() || self.y.is_infinite())
-    }
-}
-
-impl From<(f32, f32)> for Point {
-    fn from((x, y): (f32, f32)) -> Self {
-        Self { x, y }
-    }
-}
-
-impl From<Point> for (f32, f32) {
-    fn from(value: Point) -> Self {
-        (value.x, value.y)
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-struct IndexPoint {
-    x: f32,
-    y: f32,
-    i: usize,
-}
-
-impl IndexPoint {
-    fn as_point(&self) -> Point {
-        Point {
-            x: self.x,
-            y: self.y,
-        }
-    }
-}
-
-#[allow(clippy::upper_case_acronyms)]
-#[derive(Debug, Clone, Copy)]
-pub struct AABB {
-    pub center: Point,
-    pub half_dim: f32,
-}
-
-#[derive(Clone, Copy, Debug)]
-enum DiagonalDirection {
-    UpRight,
-    UpLeft,
-    DownLeft,
-    DownRight,
-}
-
-impl AABB {
-    pub fn new(center: (f32, f32), half_width: f32) -> Self {
-        debug_assert!(half_width > 0., "half width should always be > 0.");
-        Self {
-            center: center.into(),
-            half_dim: half_width,
-        }
-    }
-
-    fn tchebychev_dist(self, point: Point) -> f32 {
-        let dx = (point.x - self.center.x).abs();
-        let dy = (point.y - self.center.y).abs();
-        dx.max(dy)
-    }
-
-    #[inline]
-    pub fn contain_pt(self, point: Point) -> bool {
-        self.tchebychev_dist(point) <= self.half_dim
-    }
-
-    pub fn intersect(self, other: Self) -> bool {
-        self.tchebychev_dist(other.center) < self.half_dim + other.half_dim
-    }
-
-    fn diag_pos_from_center(&self, point: Point) -> DiagonalDirection {
-        match (point.x > self.center.x, point.y > self.center.y) {
-            (false, false) => DiagonalDirection::DownLeft,
-            (false, true) => DiagonalDirection::UpLeft,
-            (true, false) => DiagonalDirection::DownRight,
-            (true, true) => DiagonalDirection::UpRight,
-        }
-    }
-
-    pub fn subdivide(self) -> [Self; 4] {
-        let quart_dim = self.half_dim / 2.;
-        let offsets = [(-1., 1.), (1., 1.), (1., -1.), (-1., -1.)];
-
-        offsets.map(|(dx, dy)| Self {
-            center: (
-                self.center.x + dx * quart_dim,
-                self.center.y + dy * quart_dim,
-            )
-                .into(),
-            half_dim: quart_dim,
-        })
-    }
-}
-
-pub trait As2dPoint {
-    fn x(&self) -> f32;
-    fn y(&self) -> f32;
-
-    fn as_point(&self) -> Point {
-        (self.x(), self.y()).into()
-    }
-}
 
 #[derive(Debug, Clone)]
 pub struct Quadtree<T: As2dPoint, const N: usize> {
@@ -123,7 +14,7 @@ pub struct Quadtree<T: As2dPoint, const N: usize> {
 
 #[derive(Debug, Clone, Copy)]
 pub enum QuadtreeError {
-    OutOfBoundary(AABB, (f32, f32)),
+    OutOfBoundary(Aabb, (f32, f32)),
     InvalidCoord((f32, f32)),
 }
 
@@ -142,7 +33,7 @@ impl std::fmt::Display for QuadtreeError {
 
 #[allow(dead_code)]
 impl<T: As2dPoint, const N: usize> Quadtree<T, N> {
-    pub fn empty(boundary: AABB) -> Self {
+    pub fn empty(boundary: Aabb) -> Self {
         debug_assert!(N > 0, "The size should be a least 1");
 
         Self {
@@ -151,7 +42,7 @@ impl<T: As2dPoint, const N: usize> Quadtree<T, N> {
         }
     }
 
-    pub fn new(boundary: AABB, vec: Vec<T>) -> Self {
+    pub fn new(boundary: Aabb, vec: Vec<T>) -> Self {
         debug_assert!(N > 0, "The size should be a least 1");
 
         let mut result = Self {
@@ -180,13 +71,9 @@ impl<T: As2dPoint, const N: usize> Quadtree<T, N> {
 
     pub fn insert(&mut self, elem: T) -> Result<(), QuadtreeError> {
         let i = self.vec.len();
-        let i_p = IndexPoint {
-            x: elem.x(),
-            y: elem.y(),
-            i,
-        };
+        let i_p = IndexPoint::new(elem.x(), elem.y(), i);
 
-        if !self.base_node.boundary.contain_pt(i_p.as_point()) {
+        if !self.base_node.boundary.contain_pt(i_p.into_point()) {
             return Err(QuadtreeError::OutOfBoundary(
                 self.base_node.boundary,
                 (i_p.x, i_p.y),
@@ -197,7 +84,7 @@ impl<T: As2dPoint, const N: usize> Quadtree<T, N> {
 
         self.base_node.insert(i_p)
           .expect(format!("something went wrong in QuadTree::insert: could not insert the value, even if it is in the Tree boundary ({:?}), the Tchebychev distance from the center is ({:?}), OOB : {}\n\t=>",
-          self.base_node.boundary,self.base_node.boundary.tchebychev_dist(i_p.as_point()),self.base_node.boundary.tchebychev_dist(i_p.as_point()) > self.base_node.boundary.half_dim).as_str(),);
+          self.base_node.boundary,self.base_node.boundary.tchebychev_dist(i_p.into_point()),self.base_node.boundary.tchebychev_dist(i_p.into_point()) > self.base_node.boundary.half_dim).as_str(),);
 
         Ok(())
     }
@@ -217,7 +104,7 @@ impl<T: As2dPoint, const N: usize> Quadtree<T, N> {
         }
     }
 
-    pub fn query_range(&self, range: AABB) -> Vec<&T> {
+    pub fn query_range(&self, range: Aabb) -> Vec<&T> {
         let mut result = vec![];
         for i_p in self.base_node.query_range(range) {
             result.push(&self.vec[i_p.i]);
@@ -226,7 +113,7 @@ impl<T: As2dPoint, const N: usize> Quadtree<T, N> {
         result
     }
 
-    pub fn map_query_range(&mut self, range: AABB, map: impl Fn(&mut T)) {
+    pub fn map_query_range(&mut self, range: Aabb, map: impl Fn(&mut T)) {
         for i_point in self.base_node.query_range(range) {
             map(&mut self.vec[i_point.i]);
         }
@@ -234,7 +121,7 @@ impl<T: As2dPoint, const N: usize> Quadtree<T, N> {
 
     pub fn map_with_elem_in_range(
         &mut self,
-        range_mapping: impl Fn(&T) -> AABB,
+        range_mapping: impl Fn(&T) -> Aabb,
         map: impl Fn(&mut T, &mut T),
     ) {
         for i in 0..self.vec.len() {
@@ -267,7 +154,7 @@ impl<T: As2dPoint, const N: usize> Quadtree<T, N> {
     pub fn map_then_map_with_elem_in_range_then_map(
         &mut self,
         first_map: impl Fn(&mut T),
-        range_mapping: impl Fn(&T) -> AABB,
+        range_mapping: impl Fn(&T) -> Aabb,
         map_with_other: impl Fn(&mut T, &mut T),
         last_map: impl Fn(&mut T),
     ) {
@@ -334,7 +221,7 @@ impl<T: As2dPoint, const N: usize> Quadtree<T, N> {
             let new_half_width = (width.max(height) / 2.).abs().max(Self::MIN_SIZE);
             let new_center = ((min_x + max_x) / 2., (min_y + max_y) / 2.).into();
 
-            self.base_node = Node::empty(AABB::new(new_center, new_half_width));
+            self.base_node = Node::empty(Aabb::new(new_center, new_half_width));
         } else {
             self.base_node = Node::empty(self.base_node.boundary);
         }
@@ -376,7 +263,7 @@ impl<T: As2dPoint, const N: usize> Quadtree<T, N> {
         Ok(())
     }
 
-    pub fn change_bounds(&mut self, new_bound: AABB) -> Result<(), QuadtreeError> {
+    pub fn change_bounds(&mut self, new_bound: Aabb) -> Result<(), QuadtreeError> {
         let mut new_node = Node::empty(new_bound);
         for (i, elem) in self.vec.iter().enumerate() {
             let elem_pt = IndexPoint {
@@ -396,12 +283,12 @@ impl<T: As2dPoint, const N: usize> Quadtree<T, N> {
 
 #[derive(Debug, Clone)]
 struct Node<const N: usize> {
-    boundary: AABB,
+    boundary: Aabb,
     data: NodeData<N>,
 }
 
 impl<const N: usize> Node<N> {
-    fn empty(boundary: AABB) -> Self {
+    fn empty(boundary: Aabb) -> Self {
         Self {
             boundary,
             data: NodeData::Leaf(NodeLeafData {
@@ -412,7 +299,6 @@ impl<const N: usize> Node<N> {
     }
 
     fn insert(&mut self, p_i: IndexPoint) -> Result<(), QuadtreeError> {
-
         #[cfg(debug_assertions)]
         const MAX_LOOP: usize = 500_000;
         #[cfg(all(test, not(debug_assertions)))]
@@ -421,9 +307,9 @@ impl<const N: usize> Node<N> {
         #[cfg(debug_assertions)]
         let mut it_num = 0;
 
-        let pt = p_i.as_point();
+        let pt = p_i.into_point();
 
-        if !pt.is_valid() {
+        if !pt.as_valid_coord() {
             return Err(QuadtreeError::InvalidCoord((p_i.x, p_i.y)));
         }
         let mut curr_data = &mut self.data;
@@ -434,12 +320,12 @@ impl<const N: usize> Node<N> {
                 NodeData::Child(child) => {
                     let dir = curr_bounds.diag_pos_from_center(pt);
                     (curr_data, curr_bounds) = child.get_child_mut(dir)
-                },
+                }
                 NodeData::Leaf(leaf) => {
-                    if leaf.next_i >= N{
+                    if leaf.next_i >= N {
                         *curr_data = NodeData::Child(leaf.subdivide_into_child_data(curr_bounds));
                         continue;
-                    }else if let Some(slot) = leaf.points.get_mut(leaf.next_i) {
+                    } else if let Some(slot) = leaf.points.get_mut(leaf.next_i) {
                         *slot = Some(p_i);
                         leaf.next_i += 1;
                         return Ok(());
@@ -455,8 +341,7 @@ impl<const N: usize> Node<N> {
         }
         Err(QuadtreeError::OutOfBoundary(curr_bounds, (p_i.x, p_i.y)))
     }
-    
-    
+
     fn depth(&self) -> usize {
         1 + match &self.data {
             NodeData::Child(node_child_data) => node_child_data
@@ -473,15 +358,14 @@ impl<const N: usize> Node<N> {
         }
     }
 
-    fn query_range(&self, range: AABB) -> Vec<IndexPoint> {
-
-    //iterative
+    fn query_range(&self, range: Aabb) -> Vec<IndexPoint> {
+        //iterative
 
         let mut result = Vec::new();
         let mut stack = vec![self];
 
         while let Some(curr_node) = stack.pop() {
-            if !curr_node.boundary.intersect(range){
+            if !curr_node.boundary.intersect(range) {
                 continue;
             }
             match &curr_node.data {
@@ -490,12 +374,12 @@ impl<const N: usize> Node<N> {
                     stack.push(&child.up_left);
                     stack.push(&child.down_left);
                     stack.push(&child.down_right);
-                },
+                }
                 NodeData::Leaf(leaf) => {
                     for i in leaf.points[0..leaf.next_i].iter().flatten() {
                         result.push(*i);
-                    } 
-                },
+                    }
+                }
             }
         }
 
@@ -539,25 +423,13 @@ struct NodeChildData<const N: usize> {
     down_right: Box<Node<N>>,
 }
 
-impl<const N:usize> NodeChildData<N>{
-    fn get_child_mut(& mut self, dir: DiagonalDirection)->(& mut NodeData<N>, AABB){
+impl<const N: usize> NodeChildData<N> {
+    fn get_child_mut(&mut self, dir: DiagonalDirection) -> (&mut NodeData<N>, Aabb) {
         match dir {
-            DiagonalDirection::UpRight => {
-                (&mut self.up_right.data,
-                self.up_right.boundary)
-            }
-            DiagonalDirection::UpLeft => {
-                (&mut self.up_left.data,
-                self.up_left.boundary)
-            }
-            DiagonalDirection::DownLeft => {
-                (&mut self.down_left.data,
-                self.down_left.boundary)
-            }
-            DiagonalDirection::DownRight => {
-                (&mut self.down_right.data,
-                self.down_right.boundary)
-            }
+            DiagonalDirection::UpRight => (&mut self.up_right.data, self.up_right.boundary),
+            DiagonalDirection::UpLeft => (&mut self.up_left.data, self.up_left.boundary),
+            DiagonalDirection::DownLeft => (&mut self.down_left.data, self.down_left.boundary),
+            DiagonalDirection::DownRight => (&mut self.down_right.data, self.down_right.boundary),
         }
     }
 }
@@ -569,15 +441,20 @@ struct NodeLeafData<const N: usize> {
 }
 
 impl<const N: usize> NodeLeafData<N> {
-    fn subdivide_into_child_data(self, boundary: AABB) -> NodeChildData<N> {
+    fn subdivide_into_child_data(self, boundary: Aabb) -> NodeChildData<N> {
         let [ul, ur, dr, dl] = boundary.subdivide();
-        let [mut ur_p, mut ul_p, mut dl_p, mut dr_p] = [Vec::with_capacity(N/4),Vec::with_capacity(N/4),Vec::with_capacity(N/4),Vec::with_capacity(N/4)];
+        let [mut ur_p, mut ul_p, mut dl_p, mut dr_p] = [
+            Vec::with_capacity(N / 4),
+            Vec::with_capacity(N / 4),
+            Vec::with_capacity(N / 4),
+            Vec::with_capacity(N / 4),
+        ];
         for p in self.points.iter().flatten() {
             {
-                match boundary.diag_pos_from_center(p.as_point()) {
-                    DiagonalDirection::UpLeft   => ul_p.push(*p),
-                    DiagonalDirection::UpRight  => ur_p.push(*p),
-                    DiagonalDirection::DownRight=> dr_p.push(*p),
+                match boundary.diag_pos_from_center(p.into_point()) {
+                    DiagonalDirection::UpLeft => ul_p.push(*p),
+                    DiagonalDirection::UpRight => ur_p.push(*p),
+                    DiagonalDirection::DownRight => dr_p.push(*p),
                     DiagonalDirection::DownLeft => dl_p.push(*p),
                 }
             }

@@ -1,6 +1,5 @@
 //! Originally from https://github.com/CorentinVaillant/bouncing_ball
 
-
 pub mod traits;
 
 use glium::{

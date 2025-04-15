@@ -1,6 +1,5 @@
 //! Originally from https://github.com/CorentinVaillant/bouncing_ball
 
-
 use glium::{Frame, backend::Facade, uniforms::DynamicUniforms};
 
 use crate::canvas::CanvasData;
