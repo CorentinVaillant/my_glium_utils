@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod test;
 
-use super::points::Point;
+use super::points::{As2dPoint, Point};
 
 #[allow(clippy::upper_case_acronyms)]
 #[derive(Debug, Clone, Copy)]
@@ -63,5 +63,15 @@ impl Aabb {
                 .into(),
             half_dim: quart_dim,
         })
+    }
+
+    pub fn from_min_max<T: As2dPoint, U: As2dPoint>(min: T,max:U)->Self{
+        let min = Point::from(min);
+        let max = Point::from(max);
+
+        let center = ((max.x + min.x)/2., (max.y + min.y)/2.).into();
+        let half_dim = min.tchebychev_dist(max) /2.;
+
+        Self { center, half_dim }
     }
 }

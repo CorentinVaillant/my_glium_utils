@@ -2,8 +2,6 @@
 
 use crate::datastruct::quadtree::{Aabb, As2dPoint, Quadtree};
 
-
-
 #[derive(Debug, Clone)]
 struct TestPoint {
     x: f32,
