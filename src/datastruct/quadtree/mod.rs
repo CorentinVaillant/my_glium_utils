@@ -186,7 +186,8 @@ impl<T: As2dPoint, const N: usize> Quadtree<T, N> {
         if !failed_to_insert {
             self.base_node = new_base_node;
         } else {
-            println!("rebuild the entiere tree");
+            #[cfg(debug_assertions)]
+            eprintln!("rebuild the entiere tree");
             self.rebuild_fit();
         }
     }
