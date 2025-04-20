@@ -18,3 +18,6 @@ pub mod math{
 pub mod linear_algebra{
     pub use my_rust_matrix_lib::my_matrix_lib::prelude::*;
 }
+
+#[cfg(test)]
+pub mod test;

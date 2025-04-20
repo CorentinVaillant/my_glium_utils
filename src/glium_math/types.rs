@@ -1,4 +1,4 @@
-use my_rust_matrix_lib::my_matrix_lib::prelude::{Matrix, VectorMath};
+pub use my_rust_matrix_lib::my_matrix_lib::prelude::{Matrix, VectorMath};
 
 pub type Vec2 = VectorMath<f32, 2>;
 pub type Vec3 = VectorMath<f32, 3>;
