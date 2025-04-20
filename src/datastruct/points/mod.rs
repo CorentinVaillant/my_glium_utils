@@ -1,4 +1,4 @@
-use crate::maths::types::Vec2;
+use crate::glium_math::types::Vec2;
 
 #[cfg(test)]
 mod test;

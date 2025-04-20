@@ -7,5 +7,10 @@
 
 pub mod canvas;
 pub mod datastruct;
-pub mod maths;
+pub mod glium_math;
 pub mod mesh;
+
+
+pub mod math{
+    pub use crate::glium_math::*;
+}
