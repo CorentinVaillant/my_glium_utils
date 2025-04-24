@@ -647,8 +647,10 @@ dependencies = [
 name = "my_glium_util"
 version = "0.1.0"
 dependencies = [
+ "arrayvec",
  "glium",
  "my_rust_matrix_lib",
+ "num",
 ]
 
 [[package]]

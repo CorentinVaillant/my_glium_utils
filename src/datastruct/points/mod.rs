@@ -1,108 +1,106 @@
-use crate::glium_math::types::Vec2;
+use my_rust_matrix_lib::my_matrix_lib::prelude::VectorMath;
+use num::Float;
 
 #[cfg(test)]
 mod test;
 
 #[derive(Debug, Clone, Copy)]
-pub struct Point {
-    pub x: f32,
-    pub y: f32,
+pub struct Point<F: Float + Copy> {
+    pub x: F,
+    pub y: F,
 }
 
-impl Point {
+impl<F: Float + Copy> Point<F> {
     ///false if either x or y are NaN or Infinite
+    #[inline(always)]
     pub fn as_valid_coord(&self) -> bool {
         !(self.x.is_nan() || self.y.is_nan() || self.x.is_infinite() || self.y.is_infinite())
     }
 
-    pub fn dist_sq(self, other:Self)->f32{
+    #[inline(always)]
+    pub fn dist_sq(self, other: Self) -> F {
         let dx_sq = (other.x - self.x) * (other.x - self.x);
         let dy_sq = (other.y - self.y) * (other.y - self.y);
 
         dx_sq + dy_sq
     }
 
-    #[inline]
-    pub fn dist(self, other: Self)->f32{
+    #[inline(always)]
+    pub fn dist(self, other: Self) -> F {
         self.dist_sq(other).sqrt()
     }
 
-    pub fn tchebychev_dist(self, other: Self) -> f32 {
+    #[inline(always)]
+    pub fn tchebychev_dist(self, other: Self) -> F {
         let dx = (other.x - self.x).abs();
         let dy = (other.y - self.y).abs();
         dx.max(dy)
     }
 }
 
-
-
-impl<T:As2dPoint> From<T> for Point{
-    fn from(value: T) -> Self {
-        Self { x: value.x(), y: value.y() }
-    }
-}
-
-impl As2dPoint for (f32,f32){
-    #[inline]
-    fn x(&self) -> f32 {
+impl<F: Float + Copy> As2dPoint<F> for (F, F) {
+    #[inline(always)]
+    fn x(&self) -> F {
         self.0
     }
 
-    #[inline]
-    fn y(&self) -> f32 {
+    #[inline(always)]
+    fn y(&self) -> F {
         self.1
     }
 }
 
-impl As2dPoint for [f32;2]{
-    #[inline]
-    fn x(&self) -> f32 {
+impl<F: Float + Copy> As2dPoint<F> for [F; 2] {
+    #[inline(always)]
+    fn x(&self) -> F {
         self[0]
     }
 
-    #[inline]
-    fn y(&self) -> f32 {
+    #[inline(always)]
+    fn y(&self) -> F {
         self[1]
     }
 }
 
-impl As2dPoint for Vec2 {
-    #[inline]
-    fn x(&self) -> f32 {
+impl<F: Float + Copy> As2dPoint<F> for VectorMath<F, 2> {
+    #[inline(always)]
+    fn x(&self) -> F {
         self[0]
     }
 
-    #[inline]
-    fn y(&self) -> f32 {
+    #[inline(always)]
+    fn y(&self) -> F {
         self[1]
     }
 }
 
-impl As2dPoint for IndexPoint{
-    #[inline]
-    fn x(&self) -> f32 {
+impl<F: Float + Copy> As2dPoint<F> for IndexPoint<F> {
+    #[inline(always)]
+    fn x(&self) -> F {
         self.x
     }
 
-    #[inline]
-    fn y(&self) -> f32 {
+    #[inline(always)]
+    fn y(&self) -> F {
         self.y
     }
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct IndexPoint {
-    pub x: f32,
-    pub y: f32,
+pub struct IndexPoint<F: Float + Copy> {
+    pub x: F,
+    pub y: F,
     pub i: usize,
 }
 
-impl IndexPoint {
-    pub fn new(x: f32, y: f32, i: usize) -> Self {
+impl<F: Float + Copy> IndexPoint<F> {
+    #[inline(always)]
+    pub fn new(x: F, y: F, i: usize) -> Self {
         Self { x, y, i }
     }
 
-    pub fn into_point(self) -> Point {
+    #[inline(always)]
+    pub fn into_point(self) -> Point<F> {
         Point {
             x: self.x,
             y: self.y,
@@ -110,11 +108,15 @@ impl IndexPoint {
     }
 }
 
-pub trait As2dPoint {
-    fn x(&self) -> f32;
-    fn y(&self) -> f32;
+pub trait As2dPoint<F: Float + Copy> {
+    fn x(&self) -> F;
+    fn y(&self) -> F;
 
-    fn as_point(&self) -> Point {
-        (self.x(), self.y()).into()
+    #[inline(always)]
+    fn as_point(&self) -> Point<F> {
+        Point {
+            x: self.x(),
+            y: self.y(),
+        }
     }
 }

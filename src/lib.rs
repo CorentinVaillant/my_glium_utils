@@ -10,14 +10,10 @@ pub mod datastruct;
 pub mod glium_math;
 pub mod mesh;
 
-
-pub mod math{
+pub mod math {
     pub use crate::glium_math::*;
 }
 
-pub mod linear_algebra{
+pub mod linear_algebra {
     pub use my_rust_matrix_lib::my_matrix_lib::prelude::*;
 }
-
-#[cfg(test)]
-pub mod test;

@@ -1,6 +1,9 @@
 #![cfg(test)]
 
-use crate::datastruct::{aabb::Aabb, points::{As2dPoint, Point}};
+use crate::datastruct::{
+    aabb::Aabb,
+    points::{As2dPoint, Point},
+};
 
 #[test]
 fn test_aabb_contain_point1() {
@@ -32,15 +35,14 @@ fn test_aabb_subdivide() {
 }
 
 #[test]
-fn test_aabb_from_min_max(){
-    let max = (150.,150.);
-    let min = (0.,0.);
-    let mid = (75.,0.);
+fn test_aabb_from_min_max() {
+    let max = (150., 150.);
+    let min = (0., 0.);
+    let mid = (75., 0.);
 
     let aabb = Aabb::from_min_max(min, max);
 
     assert!(aabb.contain_pt(min.as_point()));
     assert!(aabb.contain_pt(max.as_point()));
     assert!(aabb.contain_pt(mid.as_point()));
-
 }
