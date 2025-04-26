@@ -1,7 +1,6 @@
 #[cfg(test)]
 mod test;
 
-
 use num::Float;
 
 use super::points::{As2dPoint, Point};

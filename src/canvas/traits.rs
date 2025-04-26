@@ -8,11 +8,14 @@ use crate::canvas::CanvasData;
 |-------Drawable-----|
 \********************/
 
-#[derive(Debug)]
-pub enum DrawError {}
-
 pub trait Drawable {
-    fn draw<F: Facade + Sized>(&self, display: &F, frame: &mut Frame) -> Result<(), DrawError>;
+    type DrawError: std::fmt::Debug;
+
+    fn draw<F: Facade + Sized>(
+        &self,
+        display: &F,
+        frame: &mut Frame,
+    ) -> Result<(), Self::DrawError>;
 }
 
 /*******************************************************************************************/
